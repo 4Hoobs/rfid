@@ -17,7 +17,7 @@ byte UIDs[MAX_UIDS][UID_LEN] = {{0x0, 0x0, 0x0, 0x0}}; // Where saved UIDs go
 unsigned uidCount = 1;                                 // has to be set manually for static UIDs
 MFRC522 rfid(SS_PIN, RST_PIN);
 
-char admin_password[MAX_PSWD_LEN] = "admin\0";
+char admin_password[MAX_PSWD_LEN] = "admin";
 char serialBuf[MAX_BUFFER_SIZE];
 byte serialLen = 0;
 
@@ -57,7 +57,7 @@ bool addUID(const byte *a)
         return false;
     for (size_t i = 0; i < UID_LEN; i++)
     {
-        UIDs[uidCount][i] = a[i]
+        UIDs[uidCount][i] = a[i];
     }
     uidCount++;
     return true;
@@ -132,7 +132,8 @@ void handleSerialCommand()
         }
         if (strlen(token) < MAX_PSWD_LEN)
         {
-            strncpy(admin_password, token, MAX_PSWD_LEN);
+            strncpy(admin_password, token, MAX_PSWD_LEN-1);
+            admin_password[MAX_PSWD_LEN] = '\0'
         }
     }
     else if (token != nullptr && strcmp(token, "DEL") == 0)
@@ -261,7 +262,7 @@ void readSerial()
         char c = Serial.read();
         if (c == '\n' || c == '\r')
         {
-            if (serialLen > 0 && serial)
+            if (serialLen > 0)
             {
                 serialBuf[serialLen] = '\0';
                 serialLen = 0;
@@ -284,7 +285,7 @@ void setup()
 
 void loop()
 {
-    readserial();
+    readSerial();
     handleSerialCommand();
     // Reset the loop if no new card present on the sensor/reader. This saves the entire process when idle.
     if (!rfid.PICC_IsNewCardPresent())
@@ -295,7 +296,7 @@ void loop()
         return;
     readUID();
 
-    // restart PICC
+    // restart PICC, not sure if this is how you should do it
     if (!rfid.PICC_IsNewCardPresent() || !rfid.PICC_ReadCardSerial())
     {
         return;
