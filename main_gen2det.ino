@@ -16,8 +16,7 @@ MFRC522 rfid(SS_PIN, RST_PIN);
 byte nuidPICC[UID_LEN];
 
 byte UIDs[MAX_UIDS][UID_LEN] = {
-    {0x00, 0x00, 0x00, 0x00}
-};
+    {0x00, 0x00, 0x00, 0x00}};
 
 unsigned uidCount = 1;
 
@@ -25,7 +24,6 @@ char admin_password[MAX_PSWD_LEN] = "admin";
 
 char serialBuf[MAX_BUFFER_SIZE];
 byte serialLen = 0;
-
 
 bool addUID(const byte *a)
 {
@@ -41,7 +39,6 @@ bool addUID(const byte *a)
 
     return true;
 }
-
 
 bool deleteUID(const byte *a)
 {
@@ -75,8 +72,7 @@ bool deleteUID(const byte *a)
         memcpy(
             UIDs[i],
             UIDs[i + 1],
-            UID_LEN
-        );
+            UID_LEN);
     }
 
     uidCount--;
@@ -84,12 +80,10 @@ bool deleteUID(const byte *a)
     memset(
         UIDs[uidCount],
         0,
-        UID_LEN
-    );
+        UID_LEN);
 
     return true;
 }
-
 
 void handleSerialCommand()
 {
@@ -98,15 +92,13 @@ void handleSerialCommand()
 
     char *token = strtok(
         serialBuf,
-        " "
-    );
+        " ");
 
     if (token == nullptr ||
         strcmp(token, admin_password) != 0)
     {
         Serial.println(
-            F("Bad password")
-        );
+            F("Bad password"));
 
         serialBuf[0] = '\0';
 
@@ -117,8 +109,7 @@ void handleSerialCommand()
 
     token = strtok(
         NULL,
-        " "
-    );
+        " ");
 
     if (token != nullptr &&
         strcmp(token, "ADD") == 0)
@@ -129,14 +120,12 @@ void handleSerialCommand()
         {
             char *hx = strtok(
                 NULL,
-                " "
-            );
+                " ");
 
             if (hx == nullptr)
             {
                 Serial.println(
-                    F("Bad UID format")
-                );
+                    F("Bad UID format"));
 
                 serialBuf[0] = '\0';
 
@@ -146,38 +135,32 @@ void handleSerialCommand()
             b[i] = (byte)strtol(
                 hx,
                 nullptr,
-                16
-            );
+                16);
         }
 
         if (addUID(b))
         {
             Serial.println(
-                F("UID added")
-            );
+                F("UID added"));
         }
         else
         {
             Serial.println(
-                F("Storage full")
-            );
+                F("Storage full"));
         }
     }
     else if (
         token != nullptr &&
-        strcmp(token, "PSWD") == 0
-    )
+        strcmp(token, "PSWD") == 0)
     {
         token = strtok(
             NULL,
-            " "
-        );
+            " ");
 
         if (token == nullptr)
         {
             Serial.println(
-                F("No new password")
-            );
+                F("No new password"));
 
             serialBuf[0] = '\0';
 
@@ -189,26 +172,22 @@ void handleSerialCommand()
             strncpy(
                 admin_password,
                 token,
-                MAX_PSWD_LEN - 1
-            );
+                MAX_PSWD_LEN - 1);
 
             admin_password[MAX_PSWD_LEN - 1] = '\0';
 
             Serial.println(
-                F("Password changed")
-            );
+                F("Password changed"));
         }
         else
         {
             Serial.println(
-                F("Password too long")
-            );
+                F("Password too long"));
         }
     }
     else if (
         token != nullptr &&
-        strcmp(token, "DEL") == 0
-    )
+        strcmp(token, "DEL") == 0)
     {
         byte b[UID_LEN];
 
@@ -216,14 +195,12 @@ void handleSerialCommand()
         {
             char *hx = strtok(
                 NULL,
-                " "
-            );
+                " ");
 
             if (hx == nullptr)
             {
                 Serial.println(
-                    F("Bad UID format")
-                );
+                    F("Bad UID format"));
 
                 serialBuf[0] = '\0';
 
@@ -233,39 +210,48 @@ void handleSerialCommand()
             b[i] = (byte)strtol(
                 hx,
                 nullptr,
-                16
-            );
+                16);
         }
 
         if (deleteUID(b))
         {
             Serial.println(
-                F("UID deleted")
-            );
+                F("UID deleted"));
         }
         else
         {
             Serial.println(
-                F("Could not delete UID")
-            );
+                F("Could not delete UID"));
         }
     }
     else
     {
         Serial.println(
-            F("Unknown command")
-        );
+            F("Unknown command"));
     }
 
     serialBuf[0] = '\0';
 }
 
-
 bool isGen1a()
 {
-    return rfid.MIFARE_OpenUidBackdoor(true);
-}
+    bool isGen1a()
+    {
+        for (byte attempt = 0; attempt < 3; attempt++)
+        {
+            if (rfid.MIFARE_OpenUidBackdoor(true))
+            {
+                return true;
+            }
 
+            rfid.PCD_AntennaOff();
+            delay(20); // maybe should be increased?
+            rfid.PCD_AntennaOn();
+            delay(20);
+        }
+        return false;
+    }
+}
 
 bool isGen2Magic()
 {
@@ -278,8 +264,7 @@ bool isGen2Magic()
 
     MFRC522::PICC_Type piccType =
         rfid.PICC_GetType(
-            rfid.uid.sak
-        );
+            rfid.uid.sak);
 
     if (piccType !=
             MFRC522::PICC_TYPE_MIFARE_1K &&
@@ -294,8 +279,7 @@ bool isGen2Magic()
             MFRC522::PICC_CMD_MF_AUTH_KEY_A,
             0,
             &key,
-            &(rfid.uid)
-        );
+            &(rfid.uid));
 
     if (status !=
         MFRC522::STATUS_OK)
@@ -312,8 +296,7 @@ bool isGen2Magic()
         rfid.MIFARE_Read(
             0,
             block0,
-            &bufferSize
-        );
+            &bufferSize);
 
     if (status !=
         MFRC522::STATUS_OK)
@@ -327,8 +310,7 @@ bool isGen2Magic()
         rfid.MIFARE_Write(
             0,
             block0,
-            16
-        );
+            16);
 
     rfid.PCD_StopCrypto1();
 
@@ -336,18 +318,15 @@ bool isGen2Magic()
            MFRC522::STATUS_OK;
 }
 
-
 bool rewriteUID(
     byte *newUid,
-    byte size
-)
+    byte size)
 {
     bool ok =
         rfid.MIFARE_SetUid(
             newUid,
             size,
-            true
-        );
+            true);
 
     rfid.PICC_HaltA();
 
@@ -355,7 +334,6 @@ bool rewriteUID(
 
     return ok;
 }
-
 
 bool compareUID(unsigned j)
 {
@@ -384,43 +362,34 @@ bool compareUID(unsigned j)
     return true;
 }
 
-
 void readUID()
 {
     Serial.print(
-        F("PICC type: ")
-    );
+        F("PICC type: "));
 
     MFRC522::PICC_Type piccType =
         rfid.PICC_GetType(
-            rfid.uid.sak
-        );
+            rfid.uid.sak);
 
     Serial.println(
         rfid.PICC_GetTypeName(
-            piccType
-        )
-    );
+            piccType));
 
     Serial.print(
-        F("UID: ")
-    );
+        F("UID: "));
 
     printHex(
         rfid.uid.uidByte,
-        rfid.uid.size
-    );
+        rfid.uid.size);
 
     Serial.println();
 
     Serial.print(
-        F("UID decimal: ")
-    );
+        F("UID decimal: "));
 
     printDec(
         rfid.uid.uidByte,
-        rfid.uid.size
-    );
+        rfid.uid.size);
 
     Serial.println();
 
@@ -438,11 +407,9 @@ void readUID()
     }
 }
 
-
 void printHex(
     byte *buffer,
-    byte bufferSize
-)
+    byte bufferSize)
 {
     for (byte i = 0;
          i < bufferSize;
@@ -453,19 +420,16 @@ void printHex(
 
         Serial.print(
             buffer[i],
-            HEX
-        );
+            HEX);
 
         if (i < bufferSize - 1)
             Serial.print(" ");
     }
 }
 
-
 void printDec(
     byte *buffer,
-    byte bufferSize
-)
+    byte bufferSize)
 {
     for (byte i = 0;
          i < bufferSize;
@@ -473,14 +437,12 @@ void printDec(
     {
         Serial.print(
             buffer[i],
-            DEC
-        );
+            DEC);
 
         if (i < bufferSize - 1)
             Serial.print(" ");
     }
 }
-
 
 void readSerial()
 {
@@ -502,8 +464,7 @@ void readSerial()
         }
         else if (
             serialLen <
-            MAX_BUFFER_SIZE - 1
-        )
+            MAX_BUFFER_SIZE - 1)
         {
             serialBuf[serialLen++] =
                 c;
@@ -511,22 +472,20 @@ void readSerial()
     }
 }
 
-
 void setup()
 {
     Serial.begin(9600);
 
     SPI.begin();
 
+    rfid.PCD_SetAntennaGain(MFRC522::RxGain_max);
     rfid.PCD_Init();
 
     delay(4);
 
     Serial.println(
-        F("RFID reader ready.")
-    );
+        F("RFID reader ready."));
 }
-
 
 void loop()
 {
@@ -544,6 +503,7 @@ void loop()
         return;
 
     readUID();
+    delay(20);
 
     bool gen1a =
         isGen1a();
@@ -552,6 +512,7 @@ void loop()
 
     if (!gen1a)
     {
+        delay(50);
         if (rfid.PICC_IsNewCardPresent() &&
             rfid.PICC_ReadCardSerial())
         {
@@ -565,32 +526,26 @@ void loop()
     if (gen1a)
     {
         Serial.println(
-            F("CARD TYPE: MAGIC GEN1A")
-        );
+            F("CARD TYPE: MAGIC GEN1A"));
 
         Serial.println(
-            F("UID REWRITING: SUPPORTED")
-        );
+            F("UID REWRITING: SUPPORTED"));
     }
     else if (gen2)
     {
         Serial.println(
-            F("CARD TYPE: MAGIC GEN2 / CUID")
-        );
+            F("CARD TYPE: MAGIC GEN2 / CUID"));
 
         Serial.println(
-            F("UID REWRITING: SUPPORTED")
-        );
+            F("UID REWRITING: SUPPORTED"));
     }
     else
     {
         Serial.println(
-            F("CARD TYPE: STANDARD MIFARE CLASSIC")
-        );
+            F("CARD TYPE: STANDARD MIFARE CLASSIC"));
 
         Serial.println(
-            F("UID REWRITING: NOT DETECTED")
-        );
+            F("UID REWRITING: NOT DETECTED"));
     }
 
     bool recognized = false;
@@ -609,14 +564,12 @@ void loop()
     if (recognized)
     {
         Serial.println(
-            F("RFID card recognized")
-        );
+            F("RFID card recognized"));
     }
     else
     {
         Serial.println(
-            F("RFID card NOT recognized")
-        );
+            F("RFID card NOT recognized"));
     }
 
     rfid.PICC_HaltA();
